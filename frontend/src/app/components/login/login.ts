@@ -4,9 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { LoginService, UsuarioLoginDTO } from '../../services/login';
 import { RegisterService, UsuarioRegisterDTO } from '../../services/register';
 
-// ⬇ NUEVO: utilidad para mostrar los errores debajo de cada campo
-import { findFieldError, matchesField } from './field-error.util';
-
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -148,26 +145,13 @@ export class Login implements OnInit {
   toggleRegisterPassword(): void {
     this.showRegisterPassword.update(v => !v);
   }
-  private readonly aliasCampo: Record<string, string[]> = {
-  password:     ['contrasena', 'contraseña', 'clave', 'pass'],
-  correo:       ['email', 'correo_electronico', 'correoElectronico'],
-  nombre:       ['name', 'first_name', 'nombres'],
-  apellido:     ['lastname', 'last_name', 'apellidos'],
-  telefono:     ['phone', 'celular', 'tel'],
-  foto_usuario: ['foto', 'fotoUsuario', 'foto_perfil', 'avatar', 'url_foto']
-};
-
-/** Lo usa el template: *ngIf="fieldError('correo')" */
-fieldError(campo: string): string | null {
-  return findFieldError(this.fieldErrors(), campo, this.aliasCampo[campo] ?? []);
-}
-
-/** OPCIONAL: (ngModelChange)="limpiarError('correo')" para limpiar al escribir */
-limpiarError(campo: string): void {
-  this.fieldErrors.update(errores =>
-    errores.filter(e => !matchesField(e.campo, campo, this.aliasCampo[campo] ?? []))
-  );
-}
+  /** Lo usa el template: *ngIf="fieldError('correo')".
+   *  El backend devuelve los errores como {campo, mensaje} usando los
+   *  mismos nombres que los campos del formulario, así que solo hay
+   *  que buscar la coincidencia exacta del nombre del campo. */
+  fieldError(campo: string): string | null {
+    return this.fieldErrors().find(e => e.campo === campo)?.mensaje ?? null;
+  }
 
 
 }
