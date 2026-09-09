@@ -16,6 +16,23 @@ export interface AuthResponse {
   error?: string;
 }
 
+/**
+ * Contrato de TODAS las respuestas de error del backend.
+ * Es el JSON que produce errors/errorHandler.ts, sea cual sea
+ * la clase lanzada (ValidationError 400, AuthorizationError 401,
+ * InvalidToken 403, NotFoundError 404, DatabaseError 400,
+ * InternalError 500...). Las clases viven solo en el backend;
+ * por la red viaja este JSON con su statusCode.
+ */
+export interface BackendErrorResponse {
+  success: false;
+  message: string;
+  /** Solo en 400 de validacion: un error por campo del formulario. */
+  errors?: Array<{ campo: string; mensaje: string }>;
+  /** Solo en DatabaseError / InternalError. */
+  error?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })

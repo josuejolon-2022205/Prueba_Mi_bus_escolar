@@ -1,7 +1,8 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LoginService, UsuarioLoginDTO } from '../../services/login';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BackendErrorResponse, LoginService, UsuarioLoginDTO } from '../../services/login';
 import { RegisterService, UsuarioRegisterDTO } from '../../services/register';
 
 @Component({
@@ -119,19 +120,28 @@ export class Login implements OnInit {
     this.successMessage.set('Sesión cerrada correctamente');
   }
 
-  private handleError(err: any): void {
-    if (err?.status === 0) {
+  /**
+   * Consume el contrato de errores del backend (BackendErrorResponse):
+   * todo error llega como { success, message, errors?, error? } con su
+   * statusCode (400 validacion, 401/403 auth, 404, 500...).
+   */
+  private handleError(err: HttpErrorResponse): void {
+    // status 0 = la peticion nunca llego al servidor (backend caido, sin red)
+    if (err.status === 0) {
       this.errorMessage.set('No se pudo conectar con el servidor backend en http://localhost:3000. Asegúrate de iniciar la API backend (cd backend && pnpm run dev).');
       return;
     }
-    const errorRes = err?.error;
-    if (errorRes) {
-      if (errorRes.errors && Array.isArray(errorRes.errors)) {
-        this.fieldErrors.set(errorRes.errors);
+
+    const body = err.error as BackendErrorResponse | undefined;
+    if (body && typeof body.message === 'string') {
+      // 400 de validacion: un error por campo, se muestra bajo cada input
+      if (Array.isArray(body.errors)) {
+        this.fieldErrors.set(body.errors);
       }
-      this.errorMessage.set(errorRes.message || errorRes.error || 'Ocurrió un error al procesar la solicitud');
+      this.errorMessage.set(body.message || body.error || 'Ocurrió un error al procesar la solicitud');
     } else {
-      this.errorMessage.set(err?.message || 'Ocurrió un error al procesar la solicitud');
+      // Respuesta inesperada (no sigue el contrato del backend)
+      this.errorMessage.set(err.message || 'Ocurrió un error al procesar la solicitud');
     }
   }
 
